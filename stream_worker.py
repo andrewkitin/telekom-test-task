@@ -1,12 +1,12 @@
 from enum import Enum
 import re
 from models import GoodPlayerMessage, PlayerMessage, UnknownMessage, BadPlayerMessage
-from handlers import GoodMessageHandler, BadMessageHandler
+from handlers import GoodMessageHandler, BadMessageHandler, MessageHandler
 # 0002 C1 01:13:02.877 00[CR]
 class StreamWorker:
 
-    def __init__(self, success_handler: GoodMessageHandler, bad_handlers: BadMessageHandler) -> None:
-        self.__template = rb'\r(\d{4}) (\w{2}) (\d{2}):(\d{2}):(\d{2}).(\d{3}) (\d{2})\r'
+    def __init__(self, success_handler: MessageHandler, bad_handlers: MessageHandler) -> None:
+        self.__template = rb'\r(\d{4}) (\w{2}) (\d{2}):(\d{2}):(\d{2})[.](\d{3}) (\d{2})\r'
         self.success_handler = success_handler
         self.bad_handler = bad_handlers
         self.__buf = b'\r' # [CR]
@@ -17,11 +17,11 @@ class StreamWorker:
         mm = mm.decode('utf-8')
         ss = ss.decode('utf-8')
         
-        if hh[0] > '2' > hh[1] > '4':
+        if (hh[0] == '2' and hh[1] > '3'):
             return False
-        if mm[0] > '6': 
+        if mm[0] > '5': 
             return False
-        if ss[0] > '6': 
+        if ss[0] > '5': 
             return False
         return True
 
@@ -43,7 +43,7 @@ class StreamWorker:
         self.__buf = self.__buf[idx:]
 
     def update(self, b_array: bytes):
-        self.__buf += b_array[:-1]
+        self.__buf += b_array.replace(b'\n',b'')
         self.__update()
     
 
