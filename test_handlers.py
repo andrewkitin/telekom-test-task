@@ -29,14 +29,16 @@ def test_time_checking(handler_setup):
 
 def test_stream_stable(handler_setup):
     worker, result = handler_setup
-    input = b'\r0002 C1 24:13:02.877 00 0002 C1 24:13:02.877 00\r\r0002 C1 13:13:02.877 00\r\r\r0002 C1 13:13:02.877 00\r\r0002\n C1\n 13:13:02\n.87\n7 00\n\r'*3
+    input = b'\r0002 C1 24:13:02.877 00 0002 C1 24:13:02.877 00\r\r0002 C1 13:13:02.800 00\r\r\r0002 C1 13:13:02.801 00\r\r0002\n C1\n 13:13:02\n.80\n2 00\n\r'*3
     worker.update(input)
     right = [True, True, True]*3
-    right.extend([False])
+    right.extend([False]*3)
     assert right == result
 
-#def test_basic_scenarios(handler_setup):
-
-#    test_bytes = ''
-    
-#    pass
+def test_long_packet(handler_setup):
+    worker, result = handler_setup
+    input = b's'*65
+    worker.update(input)
+    input = b's'*200 + b'\r0002 C1 13:13:02.877 00\r'
+    worker.update(input)
+    assert [False, True, False] == result

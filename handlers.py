@@ -18,7 +18,7 @@ class GoodMessageHandler(MessageHandler):
 
     def update(self, msg: PlayerMessage):
         self.__log_message(msg)
-        if msg.group == '00':
+        if msg.group == b'00':
             print(msg.get_message_string())
         
 class BadMessageHandler(MessageHandler):

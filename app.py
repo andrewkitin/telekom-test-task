@@ -20,13 +20,13 @@ class RequestHandler:
         while True:
             for addr, reader in self.readers.items():
                 if addr not in self.tasks.keys():
-                    self.tasks[addr] = asyncio.create_task(reader.read(128))
+                    self.tasks[addr] = asyncio.create_task(reader.read(config.RECV_SIZE))
                 else:
-                    if self.tasks[addr].done():
+                    if self.tasks[addr].done() or self.tasks[addr].cancelled():
                         data = self.tasks[addr].result()
                         if len(data):
                             self.stream_writers[addr].update(data)
-                        self.tasks[addr] = asyncio.create_task(reader.read(128))
+                        self.tasks[addr] = asyncio.create_task(reader.read(config.RECV_SIZE))
                     else:
                         # task on processing
                         pass
@@ -34,6 +34,8 @@ class RequestHandler:
 
     async def handle_conn(self, reader, writer):
         addr = writer.get_extra_info('peername')
+        if addr in self.tasks.keys():
+            self.tasks[addr].cancel()
         self.writers[addr] = writer
         self.readers[addr] = reader
         self.stream_writers[addr] = self.data_handler_class(self.good_msg_handler_class('{}_good.log'.format(addr)), self.bad_msg_handler_class('{}_bad.log'.format(addr)))
